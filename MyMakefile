@@ -1,0 +1,3 @@
+all:
+	g++ main.cpp element.cpp edge.cpp GaussQuad.cpp GaussQuadTri.cpp gaussianElimination.cpp inverse.cpp sparseMatrix.cpp -fopenmp -O3 -std=c++11 -o run
+# umfsolver.cpp -l umfpack
