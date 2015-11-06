@@ -1,0 +1,61 @@
+<?xml version='1.0' encoding='us-ascii'?> 
+<parameters>
+  
+  
+  <!-- ******************** Numerical Parameters ******************** -->
+  <numericalParameters>
+    
+    <continue> true </continue>
+    
+    <terminationCondition> 1e-5  </terminationCondition>
+    <orderOfOccuracy>      2     </orderOfOccuracy>
+    <numThreads>           8     </numThreads>
+    
+    <implicit>       false  </implicit>
+    <cfl>            1      </cfl>
+    <maxNumSteps>    1e4    </maxNumSteps>
+    <minNumSteps>    1000   </minNumSteps>
+    <printFrequancy> 100    </printFrequancy>  <!-- chante to percentage -->
+    
+    <!--
+    <implicit>     false  </implicit>
+    <cfl>          1    </cfl>
+    <maxNumSteps>  1000  </maxNumSteps>
+    <minNumSteps>  100   </minNumSteps>
+    -->	
+    
+    <tol>      1e-4  </tol>
+    <diffTol>  1e-8  </diffTol>
+    <penalty>  1     </penalty>
+    
+    <damping>
+      <max>   2e-3  </max>
+      <begin> 5e-4  </begin>
+      <end>   1e-3  </end>
+    </damping>
+	
+  </numericalParameters>
+  
+  
+  <!-- ******************** Physical Parameters ******************** -->  
+  <physicalParameters>
+    <kapa>      1.400  </kapa>
+    <reynolds>  -1   </reynolds>
+    <prandtl>   0.72   </prandtl>
+
+    <!-- inlet boundary conditions -->
+    <pIn>      1   </pIn>
+    <rhoIn>    1   </rhoIn>
+    <angleIn>  0   </angleIn>
+    
+    <!-- outlet boundary conditions -->
+    <pOut>   0.737  </pOut>
+    <!--mach>   0.5    </mach-->
+  </physicalParameters>
+
+
+  <meshPath> meshes/GAMM-doubleRefined </meshPath>
+  <outputFilePrefix>  W  </outputFilePrefix>
+
+</parameters>
+

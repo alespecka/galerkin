@@ -11,6 +11,7 @@
             <file>file:/home/ales/NetBeansProjects/galerkin/element.h</file>
             <file>file:/home/ales/NetBeansProjects/galerkin/main.cpp</file>
             <file>file:/home/ales/NetBeansProjects/galerkin/umfsolver.cpp</file>
+            <file>file:/home/ales/NetBeansProjects/galerkin/NumericalParameters.h</file>
             <file>file:/home/ales/NetBeansProjects/galerkin/sparseMatrix.cpp</file>
             <file>file:/home/ales/NetBeansProjects/galerkin/sparseMatrix.h</file>
         </group>

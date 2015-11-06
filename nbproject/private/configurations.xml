@@ -13,8 +13,6 @@
         <gdb_interceptlist>
           <gdbinterceptoptions gdb_all="false" gdb_unhandled="true" gdb_unexpected="true"/>
         </gdb_interceptlist>
-        <gdb_signals>
-        </gdb_signals>
         <gdb_options>
           <DebugOptions>
           </DebugOptions>
@@ -28,12 +26,13 @@
         <runcommandpicklist>
           <runcommandpicklistitem>"${OUTPUT_PATH}"</runcommandpicklistitem>
           <runcommandpicklistitem>"${OUTPUT_PATH}" nacaImplicit.xml</runcommandpicklistitem>
-          <runcommandpicklistitem>"${OUTPUT_PATH}" naca.xml</runcommandpicklistitem>
           <runcommandpicklistitem>"${OUTPUT_PATH}" parameters.xml</runcommandpicklistitem>
-          <runcommandpicklistitem>"${OUTPUT_PATH}" channel.xml</runcommandpicklistitem>
           <runcommandpicklistitem>"${OUTPUT_PATH}" channelImplicit.xml</runcommandpicklistitem>
+          <runcommandpicklistitem>"${OUTPUT_PATH}" gammImplicit.xml</runcommandpicklistitem>
+          <runcommandpicklistitem>"${OUTPUT_PATH}" naca.xml</runcommandpicklistitem>
+          <runcommandpicklistitem>"${OUTPUT_PATH}" channel.xml</runcommandpicklistitem>
         </runcommandpicklist>
-        <runcommand>"${OUTPUT_PATH}" channelImplicit.xml</runcommand>
+        <runcommand>"${OUTPUT_PATH}" channel.xml</runcommand>
         <rundir></rundir>
         <buildfirst>true</buildfirst>
         <terminal-type>0</terminal-type>
@@ -53,8 +52,6 @@
         <gdb_interceptlist>
           <gdbinterceptoptions gdb_all="false" gdb_unhandled="true" gdb_unexpected="true"/>
         </gdb_interceptlist>
-        <gdb_signals>
-        </gdb_signals>
         <gdb_options>
           <DebugOptions>
           </DebugOptions>
@@ -69,8 +66,10 @@
           <runcommandpicklistitem>"${OUTPUT_PATH}"</runcommandpicklistitem>
           <runcommandpicklistitem>"${OUTPUT_PATH}" naca.xml</runcommandpicklistitem>
           <runcommandpicklistitem>"${OUTPUT_PATH}" parameters.xml</runcommandpicklistitem>
-          <runcommandpicklistitem>"${OUTPUT_PATH}" channel.xml</runcommandpicklistitem>
           <runcommandpicklistitem>"${OUTPUT_PATH}" channelImplicit.xml</runcommandpicklistitem>
+          <runcommandpicklistitem>"${OUTPUT_PATH}" channel.xml</runcommandpicklistitem>
+          <runcommandpicklistitem>"${OUTPUT_PATH}" gamm.xml</runcommandpicklistitem>
+          <runcommandpicklistitem>"${OUTPUT_PATH}" gammImplicit.xml</runcommandpicklistitem>
           <runcommandpicklistitem>"${OUTPUT_PATH}" nacaImplicit.xml</runcommandpicklistitem>
         </runcommandpicklist>
         <runcommand>"${OUTPUT_PATH}" nacaImplicit.xml</runcommand>

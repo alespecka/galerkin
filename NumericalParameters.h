@@ -26,9 +26,9 @@ struct NumericalParameters {
     int nBoundaryEdges;
     double domainArea;
     
-    const double dampMin;
-    const double dampTol;
-    const double dampConst;
+    const double dampMax;
+    const double dampBegin;
+    const double dampEnd;
     
     const double tol;
     const double diffTol;  // differentiation tolerance
@@ -44,7 +44,7 @@ struct NumericalParameters {
         
         continueCalculation(continueCalculation), terminationCondition(terminationCondition), nTimeSteps(nTimeSteps),
         minSteps(minSteps), maxCfl(maxCfl), tol(tol), diffTol(diffTol), orderOfOccuracy(orderOfOccuracy),
-        dampMin(dampMin), dampTol(dampTol), dampConst(dampConst), implicit(implicit), printFrequancy(printFrequancy),
+        dampMax(dampMin), dampBegin(dampTol), dampEnd(dampConst), implicit(implicit), printFrequancy(printFrequancy),
         penalty(penalty), nThreads(nThreads), nBasis(0.5 * orderOfOccuracy * (orderOfOccuracy + 1)), nBoundaryEdges(0),
         domainArea(0.0)
     {
@@ -68,9 +68,9 @@ struct NumericalParameters {
         diffTol(params.get<double>("diffTol")),
         penalty(params.get<double>("penalty")),
 
-        dampMin(params.get<double>("damping.min")),
-        dampTol(params.get<double>("damping.tol")),    
-        dampConst(params.get<double>("damping.const")),
+        dampMax(params.get<double>("damping.max")),
+        dampBegin(params.get<double>("damping.begin")),    
+        dampEnd(params.get<double>("damping.end")),
     
         nBasis(0.5 * orderOfOccuracy * (orderOfOccuracy + 1)),
         nBoundaryEdges(0),

@@ -13,7 +13,7 @@ v = W(:,3) ./ rho;
 E = W(:,4);
 
 kapa = 1.4;
-machInf = 0.8;
+machInf = 0.5;
 p = (kapa-1) * (E - 1/2*rho.*(u.^2 + v.^2));
 a = sqrt(kapa * p ./ rho);
 mach = sqrt(u.^2 + v.^2) ./ a;

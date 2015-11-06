@@ -67,17 +67,18 @@ std::string trim(const std::string& str,
     return str.substr(strBegin, strRange);
 }
 
-void loadParameters(const std::string &parameterFileName, PhysicalParameters *&physParam,
-                    NumericalParameters *&numParam, std::string &meshPath, std::string &outFile) {
+void loadParameters(const std::string &parameterFileName, std::shared_ptr<PhysicalParameters>& physParam,
+    std::shared_ptr<NumericalParameters>& numParam, std::string &meshPath, std::string &outFile)
+{
     boost::property_tree::ptree tree;
     boost::property_tree::ptree childTree;
     boost::property_tree::read_xml(parameterFileName, tree);
     
     childTree = tree.get_child("parameters.physicalParameters");     
-    physParam = new PhysicalParameters(childTree);
+    physParam.reset(new PhysicalParameters(childTree));
     
     childTree = tree.get_child("parameters.numericalParameters");    
-    numParam = new NumericalParameters(childTree);    
+    numParam.reset(new NumericalParameters(childTree));    
         
     childTree = tree.get_child("parameters"); 
     
@@ -85,7 +86,12 @@ void loadParameters(const std::string &parameterFileName, PhysicalParameters *&p
     meshPath = trim(childTree.get<std::string>("meshPath"));
     
     outFile = meshPath + "/";
-    outFile += trim(childTree.get<std::string>("outputFile")); 
+    outFile += trim(childTree.get<std::string>("outputFilePrefix"));
+    
+    // copy the file with parameters
+    std::ifstream src(parameterFileName, std::ios::binary);
+    std::ofstream dest(outFile + "-parameteres.xml", std::ios::binary);
+    dest << src.rdbuf();
 }
 
 int loadMeshMatrices(const std::string &meshPath, double *&points, 
@@ -107,32 +113,35 @@ int loadMeshMatrices(const std::string &meshPath, double *&points,
     return nTriangles;
 }
 
-void loadQuadratures(int orderOfOccuracy, GaussQuad *&pQuad, GaussQuadTri *&pQuadTri) {
+void loadQuadratures(int orderOfOccuracy, std::shared_ptr<GaussQuad>& pQuad, 
+                     std::shared_ptr<GaussQuadTri>& pQuadTri)
+{
     int polynomialOrder = 2 * (orderOfOccuracy - 1);
         
     std::string quadFileName = quadPath + std::to_string(orderOfOccuracy) + ".txt";
-    pQuad = new GaussQuad(quadFileName);
+    pQuad.reset(new GaussQuad(quadFileName));
     
     std::string quadTriFileName = quadTriPath + std::to_string(std::max(polynomialOrder, 1)) + ".txt";
-    pQuadTri = new GaussQuadTri(quadTriFileName);
+    pQuadTri.reset(new GaussQuadTri(quadTriFileName));
 }
 
 /*
  * print result to text file
  */ 
-void saveResults(DVector &W, ElemVector &mesh, const std::string &outFile) {   
+void saveResults(arma::cube &W, ElemVector &mesh, const std::string &outFile) {   
     std::string outFileW =              outFile + ".txt";
     std::string outFileCentreSolution = outFile + "-centres.txt";
+    std::string outFileViscosity      = outFile + "-artificialViscosity.txt";
     
     std::ofstream fout;
     int dim = Element::nEqns;
     int nTriangles = mesh.size();
     int nBasis = W.size() / (dim * nTriangles);
-    double w[dim];
-    
+    Element::Vector4 w;
+        
     fout.open(outFileCentreSolution.c_str());
     for (int i = 0; i < mesh.size(); ++i) {
-        mesh[i]->combine(w, mesh[i]->centreX, mesh[i]->centreY, &W[i * dim * nBasis]);
+        mesh[i]->getW(w, mesh[i]->centreX, mesh[i]->centreY, W.slice(i));
         for (int d = 0; d < dim; ++d) {
             fout << w[d] << " ";
         }
@@ -158,6 +167,12 @@ void saveResults(DVector &W, ElemVector &mesh, const std::string &outFile) {
             fout << W[i*dim*nBasis + j] << " ";
         }
         fout << "\n";
+    }
+    fout.close();
+    
+    fout.open(outFileViscosity);
+    for (int i = 0; i < mesh.size(); ++i) {
+        fout << mesh[i]->amountOfViscosity << std::endl;
     }
     fout.close();
 }
@@ -208,10 +223,9 @@ void printCurrentState(int stepIndex, double time, double timeStep, double maxRe
     #endif    
 }
 
-void solvePDE(DVector &W, DVector &timeMesh, ElemVector &mesh, GaussQuad &quad, GaussQuadTri &quadTri,
-        NumericalParameters &numParam) {    
+void solvePDE(arma::cube& W, DVector& timeMesh, ElemVector& mesh, NumericalParameters& numParam) {    
     
-    const int dim = Element::nEqns;
+    const int nEqns = Element::nEqns;
     const int nBasis = numParam.nBasis;
     double time = 0;
     double timeStep;        
@@ -220,30 +234,27 @@ void solvePDE(DVector &W, DVector &timeMesh, ElemVector &mesh, GaussQuad &quad, 
     gettimeofday(&start, NULL);
 
     SparseMatrix *pJacobi;
-    if (numParam.implicit == true) {
-        int size = std::pow(nBasis * dim, 2) * ((Element::nFaces + 1) * mesh.size() - numParam.nBoundaryEdges);
+    if (numParam.implicit) {
+        int size = std::pow(nBasis * nEqns, 2) * ((Element::nFaces + 1) * mesh.size() - numParam.nBoundaryEdges);
         pJacobi = new SparseMatrix(size);
     }
     SparseMatrix &jacobi = *pJacobi;
 
-    DVector newW(W.size());
-    DVector RW(W.size());
-    DVector centreW(mesh.size() * dim);
+    arma::cube newW(nBasis, nEqns, mesh.size());
+    arma::cube RW(nBasis, nEqns, mesh.size());
+    arma::mat centreW(nEqns, mesh.size());    
+    arma::vec tempVect(nEqns);
     for (int i = 0; i < mesh.size(); ++i) {
-        mesh[i]->combine(&centreW[i * dim], mesh[i]->centreX, mesh[i]->centreY, &W[i * dim * nBasis]);
-    }
-    
-    arma::cube WCube(&W[0], nBasis, dim, mesh.size(), false);  // test - to be changed
-    arma::cube newWCube(&newW[0], nBasis, dim, mesh.size(), false);  // test - to be changed
-    arma::cube RWCube(&RW[0], nBasis, dim, mesh.size(), false);
+        mesh[i]->getW(tempVect, mesh[i]->centreX, mesh[i]->centreY, W.slice(i));
+        centreW.col(i) = tempVect;
+    }   
 
-    double residue[dim];
+    double residue[nEqns];
     double maxResidue = numParam.terminationCondition;
     double cfl;
     int k = 0;
     int n = 10;    
-    while (k < timeMesh.size() && (k < numParam.minSteps || maxResidue >= numParam.terminationCondition)) {
-        // calculate time step according to CFL condition
+    while (k < timeMesh.size() && (k < numParam.minSteps || maxResidue >= numParam.terminationCondition)) {        
         if (k < n && numParam.implicit && !numParam.continueCalculation) {
             cfl = (k + 1) * numParam.maxCfl / n;
         }
@@ -251,22 +262,28 @@ void solvePDE(DVector &W, DVector &timeMesh, ElemVector &mesh, GaussQuad &quad, 
             cfl = numParam.maxCfl;
         }
         
+        /* calculate time step according to CFL condition */
         double timeStep = 10000; // random sufficiently large number
         for (int i = 0; i < mesh.size(); ++i) {
-            double step = cfl / (2 * numParam.orderOfOccuracy - 1) * mesh[i]->CFL(&centreW[i * dim]);
+            double step = cfl / (2 * numParam.orderOfOccuracy - 1) * mesh[i]->CFL(&centreW[i * nEqns]);
             if (step < timeStep) {
                 timeStep = step;
             }
         }
-            
+        
+        /* compute the amount of artificial viscosity that needs to be added */
+        #pragma omp parallel for
+        for (int i = 0; i < mesh.size(); ++i) {
+            mesh[i]->shockIndicator(W.slice(i));
+        }
+                
         if (numParam.implicit) {  /*** Backward Euler ***/            
 //            high_resolution_clock::time_point start = high_resolution_clock::now();
             
             jacobi.position = 0;
             #pragma omp parallel for
             for (int i = 0; i < mesh.size(); ++i) {
-//                mesh[i]->jacobi(jacobi, RW, W, mesh, timeStep, quad, quadTri);
-                mesh[i]->jacobi(jacobi, RWCube.slice(i), WCube, mesh, timeStep, quad, quadTri);
+                mesh[i]->jacobi(jacobi, RW.slice(i), W, mesh, timeStep);
             }            
             
             #ifdef UMFSOLVER
@@ -290,30 +307,32 @@ void solvePDE(DVector &W, DVector &timeMesh, ElemVector &mesh, GaussQuad &quad, 
         else {  /*** second order Runge-Kutta ***/            
             #pragma omp parallel for
             for (int i = 0; i < mesh.size(); ++i) {
-//                mesh[i]->residualVector(RW, W, mesh, quad, quadTri);
-                mesh[i]->residualVector(RWCube.slice(i), WCube, mesh, quad, quadTri);
+                mesh[i]->residualVector(RW.slice(i), W, mesh);
                 
-                for (int pos = i*dim*nBasis; pos < (i+1)*dim*nBasis; ++pos) {
+                for (int pos = i*nEqns*nBasis; pos < (i+1)*nEqns*nBasis; ++pos) {
                     newW[pos] = W[pos] + 0.5 * timeStep * RW[pos];                    
-                }
+                }                
 //                  mesh[i]->artificialDamping(newW, quadTri);
             }           
             
             #pragma omp parallel for
             for (int i = 0; i < mesh.size(); ++i) {
-//                mesh[i]->residualVector(RW, newW, mesh, quad, quadTri);
-                mesh[i]->residualVector(RWCube.slice(i), newWCube, mesh, quad, quadTri);
+                mesh[i]->residualVector(RW.slice(i), newW, mesh);
                 
-                for (int pos = i*dim*nBasis; pos < (i+1)*dim*nBasis; ++pos) {
+                for (int pos = i*nEqns*nBasis; pos < (i+1)*nEqns*nBasis; ++pos) {
                     newW[pos] = W[pos] + timeStep * RW[pos];
                 }
+//                std::cout << "W: " << std::endl << W.slice(i) << std::endl;
+//                std::cout << "RW: " << std::endl << RW.slice(i) << std::endl;
+//                std::cout << "newW: " << std::endl << newW.slice(i) << std::endl;
+//                std::cout << "newW2: " << std::endl << (W.slice(i) + timeStep * RW.slice(i)) << std::endl;
 //                mesh[i]->artificialDamping(newW, quadTri);
             }
         }
         
         /*** check whether the solution contains any NANs ***/
         for (int i = 0; i < mesh.size(); ++i) {   
-            for (int pos = i*dim*nBasis; pos < (i+1)*dim*nBasis; ++pos) {
+            for (int pos = i*nEqns*nBasis; pos < (i+1)*nEqns*nBasis; ++pos) {
                 if (newW[pos] != newW[pos]) { 
                     std::cerr << "NAN - time step: " << k
                               << ", triangle: " << i << std::endl;
@@ -330,20 +349,22 @@ void solvePDE(DVector &W, DVector &timeMesh, ElemVector &mesh, GaussQuad &quad, 
 //        }
 
         /*** calculate residuum ***/
-        double neww[dim];
-        std::fill(residue, residue + dim, 0);
+        Element::Vector4 neww;
+        std::fill(residue, residue + nEqns, 0);
         for (int i = 0; i < mesh.size(); ++i) {
-            mesh[i]->combine(neww, mesh[i]->centreX, mesh[i]->centreY, &newW[i * dim * nBasis]);
-            for (int d = 0; d < dim; ++d) {
-                residue[d] += mesh[i]->area * std::abs(neww[d] - centreW[i * dim + d]) / numParam.domainArea;
-                centreW[i * dim + d] = neww[d];
+            mesh[i]->getW(neww, mesh[i]->centreX, mesh[i]->centreY, newW.slice(i));
+            for (int d = 0; d < nEqns; ++d) {
+                residue[d] += mesh[i]->area * std::abs(neww[d] - centreW[i * nEqns + d]) / numParam.domainArea;
+                centreW[i * nEqns + d] = neww[d];
             }
         }
-        maxResidue = *std::max_element(residue, residue + dim);
+        maxResidue = *std::max_element(residue, residue + nEqns);
 
         for (int i = 0; i < W.size(); ++i) {
             W[i] = newW[i];
         }
+        
+//        std::cout << "W: " << std::endl << W << std::endl;
 
         /*** print some information about the progress of the computation ***/
         if ((k+1) % numParam.printFrequancy == 0 || k == 0) {
@@ -368,19 +389,21 @@ int main(int argc, char** argv) {
     std::string paramFileName = argv[1];
     
     try {
-        PhysicalParameters *pPhysParam = nullptr;
-        NumericalParameters *pNumParam = nullptr;
+        std::shared_ptr<PhysicalParameters> physParam;
+        std::shared_ptr<NumericalParameters> numParam;
         std::string meshPath, outFile;
-        loadParameters(paramFileName, pPhysParam, pNumParam, meshPath, outFile);        
+        loadParameters(paramFileName, physParam, numParam, meshPath, outFile);
+        
+        std::shared_ptr<GaussQuad> quad;
+        std::shared_ptr<GaussQuadTri> quadTri;
+        loadQuadratures(numParam->orderOfOccuracy, quad, quadTri);
                 
         #ifdef _OPENMP
-            omp_set_num_threads(pNumParam->nThreads); // specify the number of threads
-            omp_lock_t lock;
-            omp_init_lock(&lock);
-            
-            Element::initialiseClass(pPhysParam, pNumParam, &lock);
+            omp_set_num_threads(numParam->nThreads); // specify the number of threads
+            omp_lock_t lock;                        
+            Element::initialiseClass(physParam, numParam, quad, quadTri, &lock);
         #else  /* _OPENMP */          
-            Element::initialiseClass(pPhysParam, pNumParam);
+            Element::initialiseClass(physParam, numParam, quad, quadTri);
         #endif /* _OPENMP */
 
         /*
@@ -389,29 +412,25 @@ int main(int argc, char** argv) {
         double *points;
         int *triangles;
         int *neighbours;        
-        int nTriangles = loadMeshMatrices(meshPath, points, triangles, neighbours);
-        
-        GaussQuad *pQuad;
-        GaussQuadTri *pQuadTri;
-        loadQuadratures(pNumParam->orderOfOccuracy, pQuad, pQuadTri);
+        int nTriangles = loadMeshMatrices(meshPath, points, triangles, neighbours);        
 
-        int nBasis = pNumParam->nBasis;
-        int dim = PhysicalParameters::nEqns;
-        DVector W(nBasis * dim * nTriangles); // solution vector
+        int nBasis = numParam->nBasis;
+        int nEqns = PhysicalParameters::nEqns;
+        arma::cube W(nBasis, nEqns, nTriangles); // solution vector
 
         /*
          * set initial conditions
          */ 
-        if (pNumParam->continueCalculation == true) {
-            readArray(&W[0], nBasis * dim * nTriangles, outFile + ".txt");
+        if (numParam->continueCalculation == true) {
+            readArray(&W[0], nBasis * nEqns * nTriangles, outFile + ".txt");
         }
         else {    
-            double w0[dim];
-            initialConditions(w0, *pPhysParam);
+            double w0[nEqns];
+            initialConditions(w0, *physParam);
             for (int i = 0; i < nTriangles; ++i) {
-                for (int d = 0; d < dim; ++d) {
+                for (int d = 0; d < nEqns; ++d) {
                     for (int j = 0; j < nBasis; ++j) {
-                        W[i * dim * nBasis + d * nBasis + j] = w0[d];
+                        W(j, d, i) = w0[d];
                     }
                 }
             }
@@ -430,8 +449,8 @@ int main(int argc, char** argv) {
         /*
          * solve problem
          */
-        DVector timeMesh(pNumParam->nTimeSteps); // declare time mesh
-        solvePDE(W, timeMesh, mesh, *pQuad, *pQuadTri, *pNumParam);                
+        DVector timeMesh(numParam->nTimeSteps); // declare time mesh
+        solvePDE(W, timeMesh, mesh, *numParam);                
 
         /*
          * print result to a text file
@@ -444,12 +463,6 @@ int main(int argc, char** argv) {
         delete points;
         delete triangles;
         delete neighbours;
-
-        delete pQuad;
-        delete pQuadTri;
-
-        delete pNumParam;
-        delete pPhysParam;
 
         return EXIT_SUCCESS;
     

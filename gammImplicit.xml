@@ -1,0 +1,53 @@
+<?xml version='1.0' encoding='us-ascii'?> 
+<parameters>
+  
+  
+  <!-- ******************** Numerical Parameters ******************** -->
+  <numericalParameters>
+    
+    <continue> true </continue>
+    
+    <terminationCondition> 1e-5  </terminationCondition>
+    <orderOfOccuracy>      4     </orderOfOccuracy>
+    <numThreads>           2     </numThreads>
+    
+    <implicit>       true   </implicit>
+    <cfl>            50     </cfl>
+    <maxNumSteps>    1400    </maxNumSteps>
+    <minNumSteps>    10     </minNumSteps>
+    <printFrequancy> 10     </printFrequancy>    
+    
+    <tol>      1e-4  </tol>
+    <diffTol>  1e-8  </diffTol>
+    <penalty>  1     </penalty>
+    
+    <damping>
+      <max>   2e-3  </max>
+      <begin> 5e-4  </begin>
+      <end>   1e-3  </end>
+    </damping>
+	
+  </numericalParameters>
+  
+  
+  <!-- ******************** Physical Parameters ******************** -->  
+  <physicalParameters>
+    <kapa>      1.400  </kapa>
+    <reynolds>   -1    </reynolds>
+    <prandtl>   0.72   </prandtl>
+
+    <!-- inlet boundary conditions -->
+    <pIn>      1   </pIn>
+    <rhoIn>    1   </rhoIn>
+    <angleIn>  0   </angleIn>
+    
+    <!-- outlet boundary conditions -->
+    <pOut>   0.737  </pOut>
+  </physicalParameters>
+
+
+  <meshPath> meshes/GAMM-refined </meshPath>
+  <outputFilePrefix>  W	 </outputFilePrefix>
+
+</parameters>
+

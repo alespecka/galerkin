@@ -29,9 +29,9 @@
     <penalty>  1     </penalty>
     
     <damping>
-      <min>   0.5  </min>
-      <tol>   5e-4 </tol>
-      <const> 1e+4 </const>
+      <max>   2e-3  </max>
+      <begin> 5e-4  </begin>
+      <end>   1e-3  </end>
     </damping>
 	
   </numericalParameters>
@@ -54,7 +54,7 @@
   </physicalParameters>
 
   <meshPath> meshes/NACA0012_2deg </meshPath>
-  <outputFile>  smaz   </outputFile>
+  <outputFilePrefix>  W  </outputFilePrefix>
 
 </parameters>
 

@@ -1,5 +1,6 @@
-path = 'channel/';
-% path = 'NACA0012d/';
+% path = 'channel/';
+% path = 'NACA0012_2deg/';
+path = 'GAMM-refined/';
 
 P = importdata(strcat(path, '/points.txt'));
 T = importdata(strcat(path, '/triangles.txt'));
@@ -16,15 +17,15 @@ while n > 0
     orderOfOccuracy = orderOfOccuracy + 1;
 end
 
-n = 1;
-powers = zeros(nBasis, 2);
-for degree = 0 : orderOfOccuracy - 1
-    for j = 0 : degree
-        powers(n,1) = degree - j;
-        powers(n,2) = j;
-        n = n + 1;
-    end
-end
+% n = 1;
+% powers = zeros(nBasis, 2);
+% for degree = 0 : orderOfOccuracy - 1
+%     for j = 0 : degree
+%         powers(n,1) = degree - j;
+%         powers(n,2) = j;
+%         n = n + 1;
+%     end
+% end
 
 [areas, indiameters, centres, lens, normals] = triangleProps(P, T);
 
@@ -90,34 +91,13 @@ axis equal
 % shading interp
 % axis([0 3 0 1 0 2])
 %view(0,0);
-% shading interp
 
-% contourLine = linspace(minMach, maxMach, 30)';
-% 
-% figure(10);
-% hold on
-% for i = 1 : nTriangles    
-%     for j = 1 : N
-%         x(j) = 0;
-%         y(j) = 0;
-%         for l = 1 : 3
-%             x(j) = x(j) + b(j,l) * P(T(i,l), 1);
-%             y(j) = y(j) + b(j,l) * P(T(i,l), 2);
-%         end
-%         
-%         combinedW = linearCombination(W(i,:), x(j), y(j), centres(i,1), centres(i,2), powers, nBasis);
-%         
-%         rho = combinedW(1);
-%         u = combinedW(2) ./ rho;
-%         v = combinedW(3) ./ rho;
-%         E = combinedW(4);
-% 
-%         p(j) = (kapa-1) * (E - 1/2*rho.*(u.^2 + v.^2));
-%         a = sqrt(kapa * p(j) ./ rho);
-%         mach(j) = sqrt(u.^2 + v.^2) ./ a;
-%     end
-%     TRI = delaunay(x,y);
-%     tricontf(x, y, TRI, mach);
-% end
-% colorbar;
+artViscosity = importdata(strcat(path, 'W-artificialViscosity.txt'));
+hold on;
+for i = 1 : nTriangles
+    if (artViscosity(i) >= 1e-4)
+        centre = 1/3 * (P(T(i,1), :) + P(T(i,2), :) + P(T(i,3), :));
+        scatter3(centre(1), centre(2), 1);
+    end
+end
 
