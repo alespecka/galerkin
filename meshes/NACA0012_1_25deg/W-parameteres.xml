@@ -13,7 +13,7 @@
     
     <implicit>       true  </implicit>
     <cfl>            50    </cfl>
-    <maxNumSteps>    9000  </maxNumSteps>
+    <maxNumSteps>    500  </maxNumSteps>
     <minNumSteps>    100   </minNumSteps>
     <printFrequancy> 1     </printFrequancy>
     
@@ -30,7 +30,7 @@
     
     <damping>
       <max>   2e-3  </max>
-      <begin> 5e-4  </begin>
+      <begin> 1e-4  </begin>
       <end>   1e-3  </end>
     </damping>
 	
@@ -46,10 +46,7 @@
     <!-- inlet boundary conditions -->
     <pIn>      1   </pIn>
     <rhoIn>    1   </rhoIn>
-    <angleIn>  0   </angleIn>
-    
-    <!-- outlet boundary conditions -->
-    <!--pOut>   0.737  </pOut-->
+    <angleIn>  0   </angleIn>    
     <mach>   0.8  </mach>
   </physicalParameters>
 

@@ -1,5 +1,6 @@
-path = 'NACA0012_1_25deg/';
-ax = [-0.5 1.25 -0.7 1.25];
+% path = 'NACA0012_1_25deg/';
+path = 'NACA0012_2deg/';
+ax = [-0.45 1.25 -0.5 1];
 
 % path = 'NACA0012_0deg/';
 % ax = [-0.5 2 -1.5 1.5];
@@ -20,6 +21,7 @@ set(gca, 'fontsize', 13);
 % grid on
 axis equal;   
 axis(ax);
+print(strcat(path,'sit'), '-dpng', '-r800');
 
 Solution = importdata(strcat(path, '/W.txt'));
 W = solutionAtNodes(Solution, P, T);
@@ -51,7 +53,7 @@ axis(ax);
 h = colorbar;
 set(gca, 'fontsize', 13);
 set(h, 'fontsize', 13);
-% % % print(strcat(path,'mach3'), '-dpng', '-r800');
+print(strcat(path,'mach'), '-dpng', '-r800');
 
 % grid on;
 
@@ -75,5 +77,5 @@ axis(ax);
 h = colorbar;
 set(gca, 'fontsize', 13);
 set(h, 'fontsize', 13);
-% % % print(strcat(path,'detailTlak2'), '-dpng', '-r800');
+print(strcat(path,'tlak'), '-dpng', '-r800');
 

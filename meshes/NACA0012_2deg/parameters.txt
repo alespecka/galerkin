@@ -1,1 +1,1 @@
-aerofoil's tilt is 2 degrees
+aerofoil's tilt is 1.25 degrees !!! - the name of the directory needs to be changed

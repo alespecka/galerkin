@@ -30,7 +30,7 @@
     
     <damping>
       <max>   2e-3  </max>
-      <begin> 1e-4  </begin>
+      <begin> 5e-4  </begin>
       <end>   1e-3  </end>
     </damping>
 	
@@ -50,8 +50,8 @@
     <mach>   0.8  </mach>
   </physicalParameters>
 
-  <meshPath> meshes/NACA0012_1_25deg </meshPath>
-  <outputFilePrefix>  W	 </outputFilePrefix>
+  <meshPath> meshes/NACA0012_2deg </meshPath>
+  <outputFilePrefix>  Wsmaz	 </outputFilePrefix>
 
 </parameters>
 

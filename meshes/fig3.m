@@ -1,6 +1,6 @@
 % path = 'channel/';
-% path = 'NACA0012_2deg/';
-path = 'GAMM-refined/';
+path = 'NACA0012_2deg/';
+% path = 'GAMM-refined/';
 
 P = importdata(strcat(path, '/points.txt'));
 T = importdata(strcat(path, '/triangles.txt'));
@@ -39,8 +39,8 @@ mach = zeros(N, 1);
 x = zeros(N, 1);
 y = zeros(N, 1);
 
-x(j) = 0;
-y(j) = 0;
+% x(j) = 0;
+% y(j) = 0;
 
 for j = 1 : N
     for l = 1 : 3
